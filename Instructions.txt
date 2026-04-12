@@ -1,0 +1,34 @@
+Delivery Checklist
+==================
+
+1. Code package
+   - Confirm these files are included in the repository:
+     - Code/main.py
+     - Code/crypto.py
+     - Code/protocol.py
+     - Code/ui.py
+     - Code/README.md
+     - Code/Report.md
+
+2. Functional walkthrough
+   A. Launch two peers (listen/connect).
+   B. Exchange at least one plaintext message.
+   C. Exchange public keys and confirm fingerprints.
+   D. Establish shared key (`/share`).
+   E. Exchange encrypted messages.
+   F. Optional: rotate key (`/rekey`) and send more secure messages.
+
+3. Packet-capture evidence
+   - Capture one plaintext packet before secure setup.
+   - Capture one encrypted packet after secure setup.
+   - Keep screenshot labels explicit and timestamped.
+
+4. Documentation package
+   - README with run commands, command guide, and architecture overview.
+   - Report with protocol design, security model, and validation notes.
+   - References to major libraries and tools used.
+
+5. Operator quick notes
+   - Use `/status` to inspect runtime state.
+   - Use `/showkeys` + `/verify` for trust checks.
+   - Use `/history` to export concise conversation traces.
