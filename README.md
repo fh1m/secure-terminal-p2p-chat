@@ -25,6 +25,7 @@ It is designed to be educational **and** practical:
 - [Run (`Code/main.py`)](#run-codemainpy)
 - [Command guide](#command-guide)
 - [Operation walkthrough](#operation-walkthrough)
+- [Deep code explainer](#deep-code-explainer)
 - [Screenshots and packet captures](#screenshots-and-packet-captures)
 - [References and resources](#references-and-resources)
 
@@ -67,6 +68,7 @@ This implementation follows the required end-to-end sequence:
 | `Code/crypto.py` | RSA-2048 key generation, RSA-OAEP encrypt/decrypt, RSA-PSS sign/verify, AES-256-GCM encrypt/decrypt. |
 | `Code/protocol.py` | Newline-delimited JSON envelope format, base64 helpers, canonical payload serialization, timestamp freshness checks. |
 | `Code/ui.py` | Colored console output and editable command input (`prompt_toolkit`). |
+| `Code/Code_Explainer.md` | Function-level and flow-level deep dive with extensive Mermaid diagrams. |
 | `Code/assets/` | Screenshots used in the README (terminal views + packet captures). |
 
 ---
@@ -300,7 +302,8 @@ If no mode is passed, the app prompts for **Listen** or **Connect**, then asks f
 | Command | Description |
 |---|---|
 | `/help` | Print available commands and input tips. |
-| `/status` | Show peer info, key/session status, and pending handshake states. |
+| `/status` | Show peer info, message counters (sent/received), and session summary. |
+| `/showsession` | Show detailed session state: key presence, handshake role (A/B), pending nonce state, and sequence counters. |
 | `/history [count]` | Show recent chat records (default `20`). |
 | `/quit` | Exit the chat session. |
 
@@ -310,7 +313,7 @@ If no mode is passed, the app prompts for **Listen** or **Connect**, then asks f
 |---|---|
 | `/genkeys` | Generate local RSA-2048 key pair. |
 | `/sendpub` | Send local public key to peer; peer auto-replies once. |
-| `/showkeys` | Show local and peer key fingerprints. |
+| `/showkeys` | Show full PEM of local and peer public keys plus their fingerprints. |
 | `/verify [fingerprint]` | Mark peer key as verified (optional explicit fingerprint check). |
 
 ### Secure session commands
@@ -336,16 +339,85 @@ If no mode is passed, the app prompts for **Listen** or **Connect**, then asks f
 
 ## Operation walkthrough
 
-1. **Start both peers** (`listen` + `connect`).
-2. **Confirm connectivity** (you should see `HELLO` and status output).
-3. **Send plaintext messages** (baseline behavior).
-4. **Exchange public keys** with `/sendpub`.
-5. **Optionally verify fingerprints** out-of-band (`/showkeys`, `/verify ...`).
-6. **Run `/share`** to start key negotiation:
-   - `KEY_REQ` -> `KEY_CHALLENGE` -> `KEY_SET` -> `KEY_ACK`
-7. **Send secure messages** (normal text now becomes encrypted `SEC_CHAT`).
-8. **Rotate keys** anytime with `/rekey`.
-9. **Inspect session state** via `/status`; exit with `/quit`.
+**Step 1 — Start both peers**
+
+```bash
+# Terminal A (listener)
+python3 Code/main.py listen 5000 --nick Alice
+
+# Terminal B (connector)
+python3 Code/main.py connect 127.0.0.1 5000 --nick Bob
+```
+
+**Step 2 — Send a plaintext message** (before any key setup)
+
+Just type a message and press Enter. It is sent as `PLAIN_CHAT`.
+
+**Step 3 — Generate local RSA keys** (on both sides if not yet done)
+
+```
+/genkeys
+```
+
+**Step 4 — (Optional) View your public key**
+
+```
+/showkeys
+```
+
+Shows your full PEM and fingerprint. No peer key is shown yet.
+
+**Step 5 — Exchange public keys**
+
+```
+/sendpub
+```
+
+Your peer will auto-reply with their key once. After this, `/showkeys` shows both sides.
+
+**Step 6 — (Optional) Verify peer fingerprint out-of-band**
+
+Compare fingerprints over a side channel (phone call, Signal, etc.), then:
+
+```
+/verify <fingerprint>
+```
+
+**Step 7 — Establish a secure session**
+
+```
+/share
+```
+
+Triggers `KEY_REQ` → `KEY_CHALLENGE` → `KEY_SET` → `KEY_ACK`. Text you type after this is sent as encrypted `SEC_CHAT`.
+
+**Step 8 — (Optional) Inspect detailed session state**
+
+```
+/showsession
+```
+
+Shows session key presence, your handshake role (A/B), pending nonce state, and sequence counters.
+
+**Step 9 — Rotate the session key at any time**
+
+```
+/rekey
+```
+
+**Step 10 — Exit**
+
+```
+/quit
+```
+
+---
+
+## Deep code explainer
+
+For a full function-by-function breakdown, control-flow analysis, design rationale, and expanded Mermaid visualizations, read:
+
+- [Code_Explainer.md](Code_Explainer.md)
 
 ---
 

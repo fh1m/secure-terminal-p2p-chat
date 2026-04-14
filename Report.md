@@ -235,6 +235,14 @@ flowchart TD
 | Freshness | Handshake timestamps checked with bounded skew (`MAX_CLOCK_SKEW_SECONDS = 180`), plus nonces and strict secure-message sequence counters. |
 | Integrity + context binding | AES-GCM tags and AAD domain separation (`P2P-CHAT-V2|PURPOSE|key_id`) prevent undetected tampering and cross-context replay. |
 
+### Added commands (aligned with reference implementation)
+
+| Command | Description |
+|---|---|
+| `/showkeys` (updated) | Displays full PEM of local and peer public keys, plus fingerprints. Previously showed fingerprints only. |
+| `/showsession` | Shows detailed handshake state: session key presence, handshake role (A initiator / B responder), pending nonce state, and send/recv sequence counters. Parallel to the reference implementation's `/showsession`. |
+| `/status` (updated) | Now includes `Messages sent: N \| received: N` counters tracked across the session. |
+
 ---
 
 ## 8) Operational walkthrough aligned with implemented commands
@@ -242,12 +250,17 @@ flowchart TD
 1. Start peers:
    - `python3 Code/main.py listen 5000 --nick Alice`
    - `python3 Code/main.py connect 127.0.0.1 5000 --nick Bob`
-2. Optional plaintext test: send a normal message before key sharing.
-3. Exchange public keys: `/sendpub` (peer auto-replies once).
-4. Inspect and verify fingerprints: `/showkeys`, then `/verify <fingerprint>`.
-5. Start secure setup: `/share` (or `/rekey` later).
-6. Send normal text again; it now goes as encrypted `SEC_CHAT` once session is active.
-7. Use `/status` and `/history` for visibility.
+2. Optional plaintext test: send a normal message before key sharing (`PLAIN_CHAT`).
+3. Generate keys if not yet done: `/genkeys`.
+4. Exchange public keys: `/sendpub` (peer auto-replies once).
+5. Inspect keys and fingerprints: `/showkeys` — shows full PEM of both local and peer keys, plus their fingerprints.
+6. Optionally verify peer fingerprint out-of-band: `/verify <fingerprint>`.
+7. Start secure setup: `/share` — triggers `KEY_REQ` → `KEY_CHALLENGE` → `KEY_SET` → `KEY_ACK`.
+8. Send normal text again; it now goes as encrypted `SEC_CHAT` once session is active.
+9. Inspect detailed session state: `/showsession` — shows key presence, handshake role (A/B), and sequence counters.
+10. Check message counters and overall state: `/status` — shows `Sent: N | Received: N` along with session summary.
+11. Rotate session key at any time: `/rekey`.
+12. Use `/history` to review past messages; exit with `/quit`.
 
 ---
 

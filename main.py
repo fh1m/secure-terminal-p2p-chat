@@ -99,6 +99,8 @@ class SecureChatClient:
         self.pending_responder: Optional[PendingResponder] = None
 
         self.history: list[ChatRecord] = []
+        self.msg_sent = 0
+        self.msg_recv = 0
 
         self._send_lock = threading.Lock()
         self._state_lock = threading.RLock()
@@ -144,6 +146,7 @@ class SecureChatClient:
         packet = encode_message(msg_type, payload)
         with self._send_lock:
             self.sock.sendall(packet)
+            self.msg_sent += 1
 
     def _send_hello(self) -> None:
         payload = {
@@ -260,10 +263,11 @@ class SecureChatClient:
     def _show_help(self) -> None:
         commands = [
             "/help                       Show this help text",
-            "/status                     Show session and key status",
+            "/status                     Show peer info and message counters",
             "/genkeys                    Generate local RSA key pair",
             "/sendpub                    Send your public key (peer auto-replies once)",
-            "/showkeys                   Show local/peer key fingerprints",
+            "/showkeys                   Show local and peer public keys + fingerprints",
+            "/showsession                Show detailed session and handshake state",
             "/verify [fingerprint]       Mark peer key as verified",
             "/share                      Start shared-key setup",
             "/rekey                      Rotate shared-key setup",
@@ -292,22 +296,52 @@ class SecureChatClient:
         self.console.info(f"Pending initiator flow: {'YES' if pending_i else 'NO'}")
         self.console.info(f"Pending responder flow: {'YES' if pending_r else 'NO'}")
         self.console.info(f"Secure session: {'YES' if secure else 'NO'} | key_id: {key_id}")
+        self.console.info(f"Messages sent: {self.msg_sent} | received: {self.msg_recv}")
         self.console.info(f"History items: {len(self.history)}")
 
     def _show_keys(self) -> None:
         with self._state_lock:
             my_fingerprint = self.my_keys.fingerprint if self.my_keys else None
+            my_pem = self.my_keys.public_pem if self.my_keys else None
             peer_fingerprint = self.peer_fingerprint
+            peer_pem = self.peer_public_pem
             peer_verified = self.peer_verified
-        if my_fingerprint:
+        if my_pem:
+            self.console.system("[My Public Key]")
+            for line in my_pem.splitlines():
+                self.console.system(line)
             self.console.info(f"My fingerprint: {my_fingerprint}")
         else:
             self.console.warn("My key is not generated yet. Use /genkeys or /sendpub.")
-        if peer_fingerprint:
+        if peer_pem:
+            self.console.system("[Peer Public Key]")
+            for line in peer_pem.splitlines():
+                self.console.system(line)
             self.console.info(f"Peer fingerprint: {peer_fingerprint}")
             self.console.info(f"Peer fingerprint verified: {'YES' if peer_verified else 'NO'}")
         else:
             self.console.warn("No peer key stored yet.")
+
+    def _show_session(self) -> None:
+        with self._state_lock:
+            has_key = self.session_key is not None
+            established = self.session_established
+            key_id = self.session_key_id or "-"
+            is_initiator = self.pending_initiator is not None
+            is_responder = self.pending_responder is not None
+            send_seq = self.sec_send_seq
+            recv_seq = self.sec_recv_seq
+        self.console.system("[Session Status]")
+        self.console.info(f"  Session key present: {'YES' if has_key else 'NO'}")
+        self.console.info(f"  Session established: {'YES' if established else 'NO'}")
+        self.console.info(f"  Key ID: {key_id}")
+        if is_initiator:
+            self.console.info("  Role: A (initiator) — waiting for KEY_CHALLENGE / KEY_ACK")
+        elif is_responder:
+            self.console.info("  Role: B (responder) — waiting for KEY_SET")
+        else:
+            self.console.info("  Role: None (no pending handshake)")
+        self.console.info(f"  Send sequence: {send_seq} | Recv sequence: {recv_seq}")
 
     def _verify_peer(self, expected: Optional[str]) -> None:
         with self._state_lock:
@@ -373,6 +407,9 @@ class SecureChatClient:
             return False
         if cmd == "/showkeys":
             self._show_keys()
+            return False
+        if cmd == "/showsession":
+            self._show_session()
             return False
         if cmd == "/verify":
             self._verify_peer(args[0] if args else None)
@@ -746,6 +783,7 @@ class SecureChatClient:
             raise ValueError("PLAIN_CHAT timestamp missing.")
 
         self.peer_nickname = sender
+        self.msg_recv += 1
         self._record_history(incoming=True, sender=sender, text=text, encrypted=False, ts=ts)
         self.console.chat(incoming=True, sender=sender, text=text, encrypted=False, ts=ts)
 
@@ -797,6 +835,7 @@ class SecureChatClient:
             sender = inner_sender
 
         self.peer_nickname = sender
+        self.msg_recv += 1
         self._record_history(incoming=True, sender=sender, text=text, encrypted=True, ts=ts)
         self.console.chat(incoming=True, sender=sender, text=text, encrypted=True, ts=ts)
 
