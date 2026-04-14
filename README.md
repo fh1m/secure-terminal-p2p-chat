@@ -25,7 +25,6 @@ It is designed to be educational **and** practical:
 - [Run (`Code/main.py`)](#run-codemainpy)
 - [Command guide](#command-guide)
 - [Operation walkthrough](#operation-walkthrough)
-- [Deep code explainer](#deep-code-explainer)
 - [Screenshots and packet captures](#screenshots-and-packet-captures)
 - [References and resources](#references-and-resources)
 
@@ -68,7 +67,6 @@ This implementation follows the required end-to-end sequence:
 | `Code/crypto.py` | RSA-2048 key generation, RSA-OAEP encrypt/decrypt, RSA-PSS sign/verify, AES-256-GCM encrypt/decrypt. |
 | `Code/protocol.py` | Newline-delimited JSON envelope format, base64 helpers, canonical payload serialization, timestamp freshness checks. |
 | `Code/ui.py` | Colored console output and editable command input (`prompt_toolkit`). |
-| `Code/Code_Explainer.md` | Function-level and flow-level deep dive with extensive Mermaid diagrams. |
 | `Code/assets/` | Screenshots used in the README (terminal views + packet captures). |
 
 ---
@@ -410,14 +408,6 @@ Shows session key presence, your handshake role (A/B), pending nonce state, and 
 ```
 /quit
 ```
-
----
-
-## Deep code explainer
-
-For a full function-by-function breakdown, control-flow analysis, design rationale, and expanded Mermaid visualizations, read:
-
-- [Code_Explainer.md](Code_Explainer.md)
 
 ---
 
