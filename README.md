@@ -22,7 +22,7 @@ It is designed to be educational **and** practical:
 - [Network packet flow by phase](#network-packet-flow-by-phase)
 - [Security-property mapping](#security-property-mapping)
 - [Requirements](#requirements)
-- [Run (`Code/main.py`)](#run-codemainpy)
+- [Run (`main.py`)](#run-codemainpy)
 - [Command guide](#command-guide)
 - [Operation walkthrough](#operation-walkthrough)
 - [Screenshots and packet captures](#screenshots-and-packet-captures)
@@ -39,7 +39,7 @@ Two peers connect directly over TCP and chat in the terminal.
 - Rekeying (`/rekey`) rotates to a fresh session key using the same secure handshake.
 
 The implementation is aligned with:
-- `Code/main.py` (runtime + state machine + command handling),
+- `main.py` (runtime + state machine + command handling),
 - `Code/crypto.py` (RSA/AES operations),
 - `Code/protocol.py` (envelope encoding/decoding + freshness checks),
 - `Code/ui.py` (terminal UX).
@@ -63,7 +63,7 @@ This implementation follows the required end-to-end sequence:
 
 | Path | Responsibility |
 |---|---|
-| `Code/main.py` | App entrypoint, socket setup (`listen`/`connect`), `SecureChatClient` state machine, command handling, message dispatch. |
+| `main.py` | App entrypoint, socket setup (`listen`/`connect`), `SecureChatClient` state machine, command handling, message dispatch. |
 | `Code/crypto.py` | RSA-2048 key generation, RSA-OAEP encrypt/decrypt, RSA-PSS sign/verify, AES-256-GCM encrypt/decrypt. |
 | `Code/protocol.py` | Newline-delimited JSON envelope format, base64 helpers, canonical payload serialization, timestamp freshness checks. |
 | `Code/ui.py` | Colored console output and editable command input (`prompt_toolkit`). |
@@ -267,26 +267,26 @@ python3 -m pip install pycryptodome prompt_toolkit
 
 ---
 
-## Run (`Code/main.py`)
+## Run (`main.py`)
 
 Open two terminals in the repository root.
 
 ### Terminal A (listener)
 
 ```bash
-python3 Code/main.py listen 5000 --nick Alice
+python3 main.py listen 5000 --nick Alice
 ```
 
 ### Terminal B (connector)
 
 ```bash
-python3 Code/main.py connect 127.0.0.1 5000 --nick Bob
+python3 main.py connect 127.0.0.1 5000 --nick Bob
 ```
 
 ### Interactive setup mode (optional)
 
 ```bash
-python3 Code/main.py
+python3 main.py
 ```
 
 If no mode is passed, the app prompts for **Listen** or **Connect**, then asks for host/port as needed.
@@ -341,10 +341,10 @@ If no mode is passed, the app prompts for **Listen** or **Connect**, then asks f
 
 ```bash
 # Terminal A (listener)
-python3 Code/main.py listen 5000 --nick Alice
+python3 main.py listen 5000 --nick Alice
 
 # Terminal B (connector)
-python3 Code/main.py connect 127.0.0.1 5000 --nick Bob
+python3 main.py connect 127.0.0.1 5000 --nick Bob
 ```
 
 **Step 2 — Send a plaintext message** (before any key setup)
